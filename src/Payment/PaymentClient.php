@@ -1,0 +1,121 @@
+<?php
+
+namespace Interdotz\Sdk\Payment;
+
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
+use Interdotz\Sdk\DTOs\Payment\BalanceResponse;
+use Interdotz\Sdk\DTOs\Payment\ChargeRequestResponse;
+use Interdotz\Sdk\DTOs\Payment\ChargeResponse;
+use Interdotz\Sdk\Exceptions\InsufficientBalanceException;
+use Interdotz\Sdk\Exceptions\PaymentException;
+
+class PaymentClient
+{
+    public function __construct(
+        private readonly ClientInterface $httpClient,
+    ) {}
+
+    public function directCharge(
+        string $accessToken,
+        int $amount,
+        string $referenceType,
+        string $referenceId,
+    ): ChargeResponse {
+        try {
+            $response = $this->httpClient->request('POST', '/api/client/charge', [
+                'headers' => ['Authorization' => "Bearer {$accessToken}"],
+                'json'    => [
+                    'amount'        => $amount,
+                    'referenceType' => $referenceType,
+                    'referenceId'   => $referenceId,
+                ],
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            return ChargeResponse::fromArray($body['payload']);
+        } catch (ClientException $e) {
+            $this->handlePaymentException($e);
+        }
+    }
+
+    public function createChargeRequest(
+        string $accessToken,
+        string $userId,
+        int $amount,
+        string $referenceType,
+        string $referenceId,
+        string $callbackUrl,
+        ?string $description = null,
+        ?string $productLogo = null,
+    ): ChargeRequestResponse {
+        try {
+            $payload = [
+                'userId'        => $userId,
+                'amount'        => $amount,
+                'referenceType' => $referenceType,
+                'referenceId'   => $referenceId,
+                'callbackUrl'   => $callbackUrl,
+            ];
+
+            if ($description !== null) {
+                $payload['description'] = $description;
+            }
+
+            if ($productLogo !== null) {
+                $payload['productLogo'] = $productLogo;
+            }
+
+            $response = $this->httpClient->request('POST', '/api/client/charge/request', [
+                'headers' => ['Authorization' => "Bearer {$accessToken}"],
+                'json'    => $payload,
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            return ChargeRequestResponse::fromArray($body['payload']);
+        } catch (ClientException $e) {
+            $this->handlePaymentException($e);
+        }
+    }
+
+    public function getBalance(string $accessToken, string $userId): BalanceResponse
+    {
+        try {
+            $response = $this->httpClient->request('GET', '/api/client/balance', [
+                'headers' => ['Authorization' => "Bearer {$accessToken}"],
+                'query'   => ['userId' => $userId],
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            return BalanceResponse::fromArray($body['payload']);
+        } catch (ClientException $e) {
+            $this->handlePaymentException($e);
+        }
+    }
+
+    private function handlePaymentException(ClientException $e): never
+    {
+        $body       = json_decode($e->getResponse()->getBody()->getContents(), true);
+        $statusCode = $e->getResponse()->getStatusCode();
+        $message    = $body['message'] ?? 'Payment request failed';
+
+        if ($statusCode === 422) {
+            throw new InsufficientBalanceException(
+                message: $message,
+                context: $body,
+                code: $statusCode,
+                previous: $e,
+            );
+        }
+
+        throw new PaymentException(
+            message: $message,
+            context: $body,
+            code: $statusCode,
+            previous: $e,
+        );
+    }
+}
