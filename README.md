@@ -11,13 +11,14 @@ Official PHP SDK untuk ekosistem Interdotz. Integrasikan SSO, manajemen akun, da
 3. [Installation](#installation)
 4. [Setup](#setup)
 5. [Use Case 1 — SSO Login & Register](#use-case-1--sso-login--register)
-6. [Use Case 2 — Direct Charge](#use-case-2--direct-charge)
-7. [Use Case 3 — Charge dengan Konfirmasi User](#use-case-3--charge-dengan-konfirmasi-user)
+6. [Use Case 2 — Direct Charge (Dots Unit)](#use-case-2--direct-charge-dots-unit)
+7. [Use Case 3 — Charge dengan Konfirmasi User (Dots Unit)](#use-case-3--charge-dengan-konfirmasi-user-dots-unit)
 8. [Use Case 4 — Cek Saldo Sebelum Charge](#use-case-4--cek-saldo-sebelum-charge)
-9. [Use Case 5 — Webhook Handler](#use-case-5--webhook-handler)
-10. [Error Handling](#error-handling)
-11. [API Reference](#api-reference)
-12. [Changelog](#changelog)
+9. [Use Case 5 — Midtrans Payment](#use-case-5--midtrans-payment)
+10. [Use Case 6 — Webhook Handler](#use-case-6--webhook-handler)
+11. [Error Handling](#error-handling)
+12. [API Reference](#api-reference)
+13. [Changelog](#changelog)
 
 ---
 
@@ -44,7 +45,9 @@ Produk kamu  ──────────────────▶  Interdot
 | **Direct Charge** | Potong DU user langsung tanpa konfirmasi |
 | **Charge + Konfirmasi** | Tampilkan halaman konfirmasi ke user sebelum DU dipotong |
 | **Cek Saldo** | Cek saldo DU user sebelum melakukan charge |
-| **Webhook** | Parse dan handle notifikasi charge dari Interdotz |
+| **Midtrans Payment** | Buat pembayaran IDR via Midtrans Snap untuk item apapun |
+| **Cek Status Payment** | Polling status pembayaran Midtrans |
+| **Webhook** | Parse dan handle notifikasi charge DU dan payment Midtrans |
 
 ---
 
@@ -388,7 +391,152 @@ foreach ($balance->balances as $coin) {
 
 ---
 
-## Use Case 5 — Webhook Handler
+## Use Case 5 — Midtrans Payment
+
+Pembayaran menggunakan uang nyata (IDR) via Midtrans Snap — untuk item atau layanan apapun yang tidak pakai Dots Unit. Interdotz yang handle integrasi Midtrans, produk kamu cukup hit satu endpoint.
+
+### Flow
+
+```
+Produk buat payment request → dapat snap_token + redirect_url
+    │
+    ▼
+User diarahkan ke halaman pembayaran Midtrans
+(pilih metode: transfer bank, QRIS, kartu kredit, dll)
+    │
+    ▼
+User selesai bayar
+    │
+    ▼
+Midtrans notif ke Interdotz → Interdotz kirim webhook ke produk kamu
+(event: payment.settlement atau payment.failed)
+```
+
+### Buat Payment
+
+```php
+use Interdotz\Sdk\Exceptions\PaymentException;
+
+try {
+    $token   = $client->auth()->authenticate($user->interdotz_id);
+
+    $payment = $client->payment()->createMidtransPayment(
+        accessToken: $token->accessToken,
+        referenceId: 'order-001',          // harus unik per transaksi
+        amount:      150000,               // dalam IDR
+        items:       [
+            [
+                'id'       => 'item-1',    // opsional
+                'name'     => 'Premium Plan',
+                'price'    => 150000,
+                'quantity' => 1,
+            ],
+        ],
+        callbackUrl: 'https://myapp.com/payment/callback',  // opsional
+        customer:    [                                        // opsional
+            'name'  => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+        ],
+        currency:    'IDR',               // default IDR
+    );
+
+    // Redirect user ke halaman pembayaran Midtrans
+    header("Location: {$payment->redirectUrl}");
+    exit;
+
+} catch (PaymentException $e) {
+    // HTTP 409 = referenceId duplikat
+}
+```
+
+**Properties yang tersedia di `MidtransPaymentResponse`:**
+
+| Property | Tipe | Deskripsi |
+|----------|------|-----------|
+| `id` | `string` | ID payment di Interdotz |
+| `referenceId` | `string` | ID transaksi dari sisi produk |
+| `amount` | `int` | Nominal pembayaran (IDR) |
+| `currency` | `string` | Selalu `"IDR"` |
+| `status` | `string` | Status awal: `"PENDING"` |
+| `snapToken` | `string\|null` | Token Midtrans Snap — bisa dipakai untuk embedded payment |
+| `redirectUrl` | `string\|null` | URL halaman pembayaran Midtrans |
+| `expiresAt` | `string\|null` | Waktu kedaluwarsa token (24 jam) |
+| `createdAt` | `string` | Timestamp dibuat |
+
+> Gunakan `snapToken` jika ingin embed popup Midtrans Snap langsung di halaman produk kamu, atau `redirectUrl` untuk redirect ke halaman Midtrans.
+
+### Cek Status Payment
+
+```php
+$token  = $client->auth()->authenticate($user->interdotz_id);
+$status = $client->payment()->getMidtransPaymentStatus(
+    accessToken: $token->accessToken,
+    paymentId:   'pay-001',   // id dari MidtransPaymentResponse
+);
+
+if ($status->isSettled()) {
+    // Pembayaran berhasil — lakukan fulfillment
+}
+
+if ($status->isPending()) {
+    // Masih menunggu pembayaran dari user
+}
+
+if ($status->isFailed()) {
+    // Gagal, expire, atau dibatalkan
+}
+```
+
+**Properties yang tersedia di `MidtransPaymentStatusResponse`:**
+
+| Property / Method | Tipe | Deskripsi |
+|-------------------|------|-----------|
+| `id` | `string` | ID payment |
+| `referenceId` | `string` | ID transaksi dari sisi produk |
+| `amount` | `int` | Nominal |
+| `status` | `string` | `PENDING`, `SETTLEMENT`, `FAILED`, `EXPIRE`, `CANCEL` |
+| `paymentMethod` | `string\|null` | Metode bayar, contoh: `"bank_transfer"`, `"qris"` |
+| `gatewayTransactionId` | `string\|null` | ID transaksi dari Midtrans |
+| `paidAt` | `string\|null` | Waktu pembayaran berhasil |
+| `isSettled()` | `bool` | `true` jika status `SETTLEMENT` |
+| `isPending()` | `bool` | `true` jika status `PENDING` |
+| `isFailed()` | `bool` | `true` jika status `FAILED`, `EXPIRE`, atau `CANCEL` |
+
+### Handle Webhook Midtrans
+
+Setelah pembayaran selesai, Interdotz mengirim webhook ke `webhook_url` produk kamu:
+
+```php
+$payload = $client->webhook()->parse($rawBody);
+
+if ($payload->isPaymentSettlement()) {
+    $paymentId   = $payload->data['payment_id'];
+    $referenceId = $payload->data['reference_id'];
+    $amount      = $payload->data['amount'];
+    $paidAt      = $payload->data['paid_at'];
+
+    // Fulfill order
+}
+
+if ($payload->isPaymentFailed()) {
+    $referenceId = $payload->data['reference_id'];
+    $status      = $payload->data['status']; // FAILED | EXPIRE | CANCEL
+
+    // Batalkan order
+}
+```
+
+**Webhook events Midtrans:**
+
+| Event | Kondisi |
+|-------|---------|
+| `payment.settlement` | Pembayaran berhasil dikonfirmasi |
+| `payment.failed` | Pembayaran gagal, expire, atau dibatalkan user |
+
+---
+
+## Use Case 6 — Webhook Handler
 
 Setiap charge yang berhasil atau gagal akan dikirim sebagai HTTP POST ke `webhook_url` yang kamu daftarkan saat registrasi client. Gunakan webhook ini sebagai **satu-satunya sumber kebenaran** untuk memproses transaksi.
 
@@ -574,17 +722,35 @@ new InterdotzClient(
 
 ### `PaymentClient` — `$client->payment()`
 
+**Dots Unit:**
+
 | Method | Parameter | Return | Deskripsi |
 |--------|-----------|--------|-----------|
 | `directCharge()` | `accessToken`, `amount`, `referenceType`, `referenceId` | `ChargeResponse` | Charge DU langsung |
-| `createChargeRequest()` | `accessToken`, `userId`, `amount`, `referenceType`, `referenceId`, `callbackUrl`, `?description`, `?productLogo` | `ChargeRequestResponse` | Buat charge request dengan konfirmasi |
+| `createChargeRequest()` | `accessToken`, `userId`, `amount`, `referenceType`, `referenceId`, `callbackUrl`, `?description`, `?productLogo` | `ChargeRequestResponse` | Buat charge request dengan konfirmasi user |
 | `getBalance()` | `accessToken`, `userId` | `BalanceResponse` | Cek saldo DU user |
+
+**Midtrans:**
+
+| Method | Parameter | Return | Deskripsi |
+|--------|-----------|--------|-----------|
+| `createMidtransPayment()` | `accessToken`, `referenceId`, `amount`, `?items`, `?callbackUrl`, `?customer`, `currency` | `MidtransPaymentResponse` | Buat payment IDR via Midtrans Snap |
+| `getMidtransPaymentStatus()` | `accessToken`, `paymentId` | `MidtransPaymentStatusResponse` | Cek status payment Midtrans |
 
 ### `WebhookHandler` — `$client->webhook()`
 
 | Method | Parameter | Return | Deskripsi |
 |--------|-----------|--------|-----------|
 | `parse()` | `rawBody: string` | `WebhookPayload` | Parse raw request body dari webhook |
+
+**`WebhookPayload` — methods:**
+
+| Method | Event | Deskripsi |
+|--------|-------|-----------|
+| `isSuccess()` | `charge.success` | Charge DU berhasil |
+| `isFailed()` | `charge.failed` | Charge DU gagal |
+| `isPaymentSettlement()` | `payment.settlement` | Payment Midtrans berhasil |
+| `isPaymentFailed()` | `payment.failed` | Payment Midtrans gagal/expire/cancel |
 
 ---
 
@@ -594,5 +760,6 @@ new InterdotzClient(
 - Initial release
 - SSO: `getLoginUrl()`, `getRegisterUrl()`, `handleCallback()`
 - Auth: `authenticate()`
-- Payment: `directCharge()`, `createChargeRequest()`, `getBalance()`
-- Webhook: `parse()`
+- Payment (DU): `directCharge()`, `createChargeRequest()`, `getBalance()`
+- Payment (Midtrans): `createMidtransPayment()`, `getMidtransPaymentStatus()`
+- Webhook: `parse()` — support event DU dan Midtrans
