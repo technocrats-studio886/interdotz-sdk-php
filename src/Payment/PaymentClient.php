@@ -7,6 +7,8 @@ use GuzzleHttp\Exception\ClientException;
 use Interdotz\Sdk\DTOs\Payment\BalanceResponse;
 use Interdotz\Sdk\DTOs\Payment\ChargeRequestResponse;
 use Interdotz\Sdk\DTOs\Payment\ChargeResponse;
+use Interdotz\Sdk\DTOs\Payment\MidtransPaymentResponse;
+use Interdotz\Sdk\DTOs\Payment\MidtransPaymentStatusResponse;
 use Interdotz\Sdk\Exceptions\InsufficientBalanceException;
 use Interdotz\Sdk\Exceptions\PaymentException;
 
@@ -91,6 +93,61 @@ class PaymentClient
             $body = json_decode($response->getBody()->getContents(), true);
 
             return BalanceResponse::fromArray($body['payload']);
+        } catch (ClientException $e) {
+            $this->handlePaymentException($e);
+        }
+    }
+
+    public function createMidtransPayment(
+        string $accessToken,
+        string $referenceId,
+        int $amount,
+        array $items = [],
+        ?string $callbackUrl = null,
+        ?array $customer = null,
+        string $currency = 'IDR',
+    ): MidtransPaymentResponse {
+        try {
+            $payload = [
+                'reference_id' => $referenceId,
+                'amount'       => $amount,
+                'currency'     => $currency,
+                'items'        => $items,
+            ];
+
+            if ($callbackUrl !== null) {
+                $payload['callback_url'] = $callbackUrl;
+            }
+
+            if ($customer !== null) {
+                $payload['customer'] = $customer;
+            }
+
+            $response = $this->httpClient->request('POST', '/api/client/payments', [
+                'headers' => ['Authorization' => "Bearer {$accessToken}"],
+                'json'    => $payload,
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            return MidtransPaymentResponse::fromArray($body['payload']);
+        } catch (ClientException $e) {
+            $this->handlePaymentException($e);
+        }
+    }
+
+    public function getMidtransPaymentStatus(
+        string $accessToken,
+        string $paymentId,
+    ): MidtransPaymentStatusResponse {
+        try {
+            $response = $this->httpClient->request('GET', "/api/client/payments/{$paymentId}", [
+                'headers' => ['Authorization' => "Bearer {$accessToken}"],
+            ]);
+
+            $body = json_decode($response->getBody()->getContents(), true);
+
+            return MidtransPaymentStatusResponse::fromArray($body['payload']);
         } catch (ClientException $e) {
             $this->handlePaymentException($e);
         }

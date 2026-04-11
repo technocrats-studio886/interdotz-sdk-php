@@ -10,6 +10,8 @@ readonly class WebhookPayload
         public array $data,
     ) {}
 
+    // ── Dots Unit events ─────────────────────────────────────────────────────
+
     public function isSuccess(): bool
     {
         return $this->event === 'charge.success';
@@ -18,6 +20,18 @@ readonly class WebhookPayload
     public function isFailed(): bool
     {
         return $this->event === 'charge.failed';
+    }
+
+    // ── Midtrans payment events ───────────────────────────────────────────────
+
+    public function isPaymentSettlement(): bool
+    {
+        return $this->event === 'payment.settlement';
+    }
+
+    public function isPaymentFailed(): bool
+    {
+        return $this->event === 'payment.failed';
     }
 
     public static function fromArray(array $data): self

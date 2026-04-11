@@ -72,7 +72,7 @@ Tambahkan repository berikut di `composer.json` project kamu:
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/interdotz/sdk-php"
+            "url": "https://github.com/technocrats-studio886/interdotz-sdk-php"
         }
     ],
     "require": {
