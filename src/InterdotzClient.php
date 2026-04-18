@@ -4,6 +4,7 @@ namespace Interdotz\Sdk;
 
 use GuzzleHttp\Client as HttpClient;
 use Interdotz\Sdk\Auth\AuthClient;
+use Interdotz\Sdk\Mailbox\MailboxClient;
 use Interdotz\Sdk\Payment\PaymentClient;
 use Interdotz\Sdk\Sso\SsoClient;
 use Interdotz\Sdk\Webhook\WebhookHandler;
@@ -11,6 +12,7 @@ use Interdotz\Sdk\Webhook\WebhookHandler;
 class InterdotzClient
 {
     private readonly AuthClient $auth;
+    private readonly MailboxClient $mailbox;
     private readonly PaymentClient $payment;
     private readonly SsoClient $sso;
     private readonly WebhookHandler $webhook;
@@ -30,6 +32,7 @@ class InterdotzClient
         ], $httpOptions));
 
         $this->auth    = new AuthClient($httpClient, $clientId, $clientSecret);
+        $this->mailbox = new MailboxClient($httpClient);
         $this->payment = new PaymentClient($httpClient);
         $this->sso     = new SsoClient($clientId);
         $this->webhook = new WebhookHandler();
@@ -38,6 +41,11 @@ class InterdotzClient
     public function auth(): AuthClient
     {
         return $this->auth;
+    }
+
+    public function mailbox(): MailboxClient
+    {
+        return $this->mailbox;
     }
 
     public function payment(): PaymentClient
