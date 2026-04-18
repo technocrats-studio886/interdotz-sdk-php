@@ -290,9 +290,9 @@ Produk buat charge request → dapat redirectUrl
 User diarahkan ke halaman konfirmasi Interdotz
 (tampil: nama produk, jumlah DU, deskripsi, saldo saat ini)
     │
-    ├── User klik Konfirmasi → DU dipotong → redirect ke callbackUrl?status=confirmed
+    ├── User klik Konfirmasi → DU dipotong → redirect ke redirectUrl?status=confirmed
     │
-    └── User klik Tolak → redirect ke callbackUrl?status=rejected
+    └── User klik Tolak → redirect ke redirectUrl?status=rejected
     │
     ▼
 Produk update status order (jangan andalkan redirect, tunggu webhook)
@@ -309,7 +309,7 @@ $chargeRequest = $client->payment()->createChargeRequest(
     amount:        100,
     referenceType: 'SUBSCRIPTION',
     referenceId:   'sub-premium-april-2024',    // harus unik
-    callbackUrl:   'https://myapp.com/payment/callback',
+    redirectUrl:   'https://myapp.com/payment/callback',
     description:   'Langganan Plan Premium — April 2024',  // ditampilkan ke user
     productLogo:   'https://myapp.com/logo.png',           // logo di halaman konfirmasi
 );
@@ -432,7 +432,7 @@ try {
                 'quantity' => 1,
             ],
         ],
-        callbackUrl: 'https://myapp.com/payment/callback',  // opsional
+        redirectUrl: 'https://myapp.com/payment/callback',  // opsional
         customer:    [                                        // opsional
             'name'  => $user->name,
             'email' => $user->email,
@@ -727,14 +727,14 @@ new InterdotzClient(
 | Method | Parameter | Return | Deskripsi |
 |--------|-----------|--------|-----------|
 | `directCharge()` | `accessToken`, `amount`, `referenceType`, `referenceId` | `ChargeResponse` | Charge DU langsung |
-| `createChargeRequest()` | `accessToken`, `userId`, `amount`, `referenceType`, `referenceId`, `callbackUrl`, `?description`, `?productLogo` | `ChargeRequestResponse` | Buat charge request dengan konfirmasi user |
+| `createChargeRequest()` | `accessToken`, `userId`, `amount`, `referenceType`, `referenceId`, `redirectUrl`, `?description`, `?productLogo` | `ChargeRequestResponse` | Buat charge request dengan konfirmasi user |
 | `getBalance()` | `accessToken`, `userId` | `BalanceResponse` | Cek saldo DU user |
 
 **Midtrans:**
 
 | Method | Parameter | Return | Deskripsi |
 |--------|-----------|--------|-----------|
-| `createMidtransPayment()` | `accessToken`, `referenceId`, `amount`, `?items`, `?callbackUrl`, `?customer`, `currency` | `MidtransPaymentResponse` | Buat payment IDR via Midtrans Snap |
+| `createMidtransPayment()` | `accessToken`, `referenceId`, `amount`, `?items`, `?redirectUrl`, `?customer`, `currency` | `MidtransPaymentResponse` | Buat payment IDR via Midtrans Snap |
 | `getMidtransPaymentStatus()` | `accessToken`, `paymentId` | `MidtransPaymentStatusResponse` | Cek status payment Midtrans |
 
 ### `WebhookHandler` — `$client->webhook()`

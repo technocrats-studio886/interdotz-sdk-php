@@ -48,7 +48,7 @@ class PaymentClient
         int $amount,
         string $referenceType,
         string $referenceId,
-        string $callbackUrl,
+        string $redirectUrl,
         ?string $description = null,
         ?string $productLogo = null,
     ): ChargeRequestResponse {
@@ -58,7 +58,7 @@ class PaymentClient
                 'amount'        => $amount,
                 'referenceType' => $referenceType,
                 'referenceId'   => $referenceId,
-                'callbackUrl'   => $callbackUrl,
+                'redirect_url'  => $redirectUrl,
             ];
 
             if ($description !== null) {
@@ -103,7 +103,7 @@ class PaymentClient
         string $referenceId,
         int $amount,
         array $items = [],
-        ?string $callbackUrl = null,
+        ?string $redirectUrl = null,
         ?array $customer = null,
         string $currency = 'IDR',
     ): MidtransPaymentResponse {
@@ -115,8 +115,8 @@ class PaymentClient
                 'items'        => $items,
             ];
 
-            if ($callbackUrl !== null) {
-                $payload['callback_url'] = $callbackUrl;
+            if ($redirectUrl !== null) {
+                $payload['redirect_url'] = $redirectUrl;
             }
 
             if ($customer !== null) {

@@ -52,7 +52,7 @@ class MidtransPaymentTest extends TestCase
             items:        [
                 ['id' => 'item-1', 'name' => 'Premium Plan', 'price' => 150000, 'quantity' => 1],
             ],
-            callbackUrl:  'https://myapp.com/payment/callback',
+            redirectUrl:  'https://myapp.com/payment/callback',
             customer:     ['name' => 'John Doe', 'email' => 'john@example.com'],
         );
 

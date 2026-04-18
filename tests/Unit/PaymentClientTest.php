@@ -121,7 +121,7 @@ class PaymentClientTest extends TestCase
             amount:        50,
             referenceType: 'SUBSCRIPTION',
             referenceId:   'sub-premium-april',
-            callbackUrl:   'https://myapp.com/payment/callback',
+            redirectUrl:   'https://myapp.com/payment/callback',
         );
 
         $this->assertInstanceOf(ChargeRequestResponse::class, $result);
