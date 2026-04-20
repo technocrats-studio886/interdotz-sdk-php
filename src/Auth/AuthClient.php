@@ -20,9 +20,9 @@ class AuthClient
         try {
             $response = $this->httpClient->request('POST', '/api/client/auth', [
                 'json' => [
-                    'clientId'     => $this->clientId,
-                    'clientSecret' => $this->clientSecret,
-                    'userId'       => $userId,
+                    'client_id'     => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'user_id'       => $userId,
                 ],
             ]);
 

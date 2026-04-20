@@ -28,9 +28,9 @@ class PaymentClient
             $response = $this->httpClient->request('POST', '/api/client/charge', [
                 'headers' => ['Authorization' => "Bearer {$accessToken}"],
                 'json'    => [
-                    'amount'        => $amount,
-                    'referenceType' => $referenceType,
-                    'referenceId'   => $referenceId,
+                    'amount'         => $amount,
+                    'reference_type' => $referenceType,
+                    'reference_id'   => $referenceId,
                 ],
             ]);
 
@@ -54,11 +54,11 @@ class PaymentClient
     ): ChargeRequestResponse {
         try {
             $payload = [
-                'userId'        => $userId,
-                'amount'        => $amount,
-                'referenceType' => $referenceType,
-                'referenceId'   => $referenceId,
-                'redirect_url'  => $redirectUrl,
+                'user_id'        => $userId,
+                'amount'         => $amount,
+                'reference_type' => $referenceType,
+                'reference_id'   => $referenceId,
+                'redirect_url'   => $redirectUrl,
             ];
 
             if ($description !== null) {
@@ -66,7 +66,7 @@ class PaymentClient
             }
 
             if ($productLogo !== null) {
-                $payload['productLogo'] = $productLogo;
+                $payload['product_logo'] = $productLogo;
             }
 
             $response = $this->httpClient->request('POST', '/api/client/charge/request', [
@@ -87,7 +87,7 @@ class PaymentClient
         try {
             $response = $this->httpClient->request('GET', '/api/client/balance', [
                 'headers' => ['Authorization' => "Bearer {$accessToken}"],
-                'query'   => ['userId' => $userId],
+                'query'   => ['user_id' => $userId],
             ]);
 
             $body = json_decode($response->getBody()->getContents(), true);

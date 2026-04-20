@@ -14,8 +14,8 @@ readonly class ChargeRequestResponse
     {
         return new self(
             token: $data['token'],
-            redirectUrl: $data['redirectUrl'],
-            expiresAt: $data['expiresAt'],
+            redirectUrl: $data['redirect_url'],
+            expiresAt: $data['expires_at'],
         );
     }
 }

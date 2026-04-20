@@ -12,8 +12,8 @@ readonly class TokenResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            accessToken: $data['accessToken'],
-            expiresIn: $data['expiresIn'],
+            accessToken: $data['access_token'],
+            expiresIn: $data['expires_in'],
         );
     }
 }

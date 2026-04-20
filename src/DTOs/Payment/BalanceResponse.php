@@ -23,7 +23,7 @@ readonly class BalanceResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            userId: $data['userId'],
+            userId: $data['user_id'],
             balances: $data['balances'],
         );
     }

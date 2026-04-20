@@ -19,15 +19,15 @@ readonly class ChargeResponse
     public static function fromArray(array $data): self
     {
         return new self(
-            transactionId: $data['transactionId'],
-            userId: $data['userId'],
-            coinType: $data['coinType'],
-            amountCharged: $data['amountCharged'],
-            balanceBefore: $data['balanceBefore'],
-            balanceAfter: $data['balanceAfter'],
-            referenceType: $data['referenceType'],
-            referenceId: $data['referenceId'],
-            createdAt: $data['createdAt'],
+            transactionId: $data['transaction_id'],
+            userId: $data['user_id'],
+            coinType: $data['coin_type'],
+            amountCharged: $data['amount_charged'],
+            balanceBefore: $data['balance_before'],
+            balanceAfter: $data['balance_after'],
+            referenceType: $data['reference_type'],
+            referenceId: $data['reference_id'],
+            createdAt: $data['created_at'],
         );
     }
 }
