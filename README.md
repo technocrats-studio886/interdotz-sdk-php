@@ -737,6 +737,33 @@ new InterdotzClient(
 | `createMidtransPayment()` | `accessToken`, `referenceId`, `amount`, `?items`, `?redirectUrl`, `?customer`, `currency` | `MidtransPaymentResponse` | Buat payment IDR via Midtrans Snap |
 | `getMidtransPaymentStatus()` | `accessToken`, `paymentId` | `MidtransPaymentStatusResponse` | Cek status payment Midtrans |
 
+### `MailboxClient` — `$client->mailbox()`
+
+| Method | Parameter | Return | Deskripsi |
+|--------|-----------|--------|-----------|
+| `getInbox()` | `accessToken`, `page`, `size` | `MailInboxResponse` | Ambil daftar pesan masuk |
+| `getSent()` | `accessToken`, `page`, `size` | `MailSentResponse` | Ambil daftar pesan terkirim |
+| `getDetail()` | `accessToken`, `mailId` | `MailItemResponse` | Detail satu pesan |
+| `send()` | `accessToken`, `recipientEmail`, `subject`, `body`, `?recipientClientId` | `MailResponse` | Kirim pesan ke `username@interdotz.com` |
+| `markAsRead()` | `accessToken`, `mailId` | `MailItemResponse` | Tandai pesan sebagai dibaca |
+| `markAllRead()` | `accessToken` | `int` | Tandai semua pesan sebagai dibaca, return jumlah yang diupdate |
+| `delete()` | `accessToken`, `mailId` | `void` | Hapus pesan |
+
+Contoh kirim pesan:
+
+```php
+$token = $client->auth()->authenticate($user->interdotz_id);
+
+$mail = $client->mailbox()->send(
+    accessToken:    $token->accessToken,
+    recipientEmail: 'john_doe@interdotz.com',
+    subject:        'Halo!',
+    body:           'Ini pesan pertamaku.',
+);
+```
+
+---
+
 ### `WebhookHandler` — `$client->webhook()`
 
 | Method | Parameter | Return | Deskripsi |
@@ -755,6 +782,9 @@ new InterdotzClient(
 ---
 
 ## Changelog
+
+### v0.2.0
+- `MailboxClient` — kirim pesan pakai `recipientEmail` (`username@interdotz.com`), `recipientClientId` opsional
 
 ### v0.1.0
 - Initial release

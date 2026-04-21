@@ -59,20 +59,25 @@ class MailboxClient
 
     public function send(
         string $accessToken,
-        string $recipientId,
-        string $recipientClientId,
+        string $recipientEmail,
         string $subject,
         string $body,
+        ?string $recipientClientId = null,
     ): MailResponse {
-        return $this->request(function () use ($accessToken, $recipientId, $recipientClientId, $subject, $body) {
+        return $this->request(function () use ($accessToken, $recipientEmail, $recipientClientId, $subject, $body) {
+            $payload = [
+                'recipient_email' => $recipientEmail,
+                'subject'         => $subject,
+                'body'            => $body,
+            ];
+
+            if ($recipientClientId !== null) {
+                $payload['recipient_client_id'] = $recipientClientId;
+            }
+
             $response = $this->httpClient->request('POST', '/api/client/mailbox/send', [
                 'headers' => ['Authorization' => "Bearer {$accessToken}"],
-                'json'    => [
-                    'recipient_id'        => $recipientId,
-                    'recipient_client_id' => $recipientClientId,
-                    'subject'             => $subject,
-                    'body'                => $body,
-                ],
+                'json'    => $payload,
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
