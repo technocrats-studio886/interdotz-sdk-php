@@ -15,14 +15,14 @@ class AuthClient
         private readonly string $clientSecret,
     ) {}
 
-    public function authenticate(string $userId): TokenResponse
+    public function authenticate(string $userJwt): TokenResponse
     {
         try {
             $response = $this->httpClient->request('POST', '/api/client/auth', [
-                'json' => [
-                    'client_id'     => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'user_id'       => $userId,
+                'headers' => [
+                    'Authorization'  => 'Bearer ' . $userJwt,
+                    'X-Client-Id'     => $this->clientId,
+                    'X-Client-Secret' => $this->clientSecret,
                 ],
             ]);
 

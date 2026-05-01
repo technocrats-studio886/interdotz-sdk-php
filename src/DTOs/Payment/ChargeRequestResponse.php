@@ -14,8 +14,14 @@ readonly class ChargeRequestResponse
     {
         return new self(
             token: $data['token'],
-            redirectUrl: $data['redirect_url'],
-            expiresAt: $data['expires_at'],
+            redirectUrl: $data['redirectUrl'],
+            expiresAt: $data['expiresAt'],
         );
+    }
+
+    public function redirect(): never
+    {
+        header('Location: ' . $this->redirectUrl);
+        exit;
     }
 }

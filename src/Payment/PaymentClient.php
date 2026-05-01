@@ -44,7 +44,6 @@ class PaymentClient
 
     public function createChargeRequest(
         string $accessToken,
-        string $userId,
         int $amount,
         string $referenceType,
         string $referenceId,
@@ -54,7 +53,6 @@ class PaymentClient
     ): ChargeRequestResponse {
         try {
             $payload = [
-                'user_id'        => $userId,
                 'amount'         => $amount,
                 'reference_type' => $referenceType,
                 'reference_id'   => $referenceId,

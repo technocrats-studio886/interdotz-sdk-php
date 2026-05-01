@@ -34,7 +34,7 @@ class AuthClientTest extends TestCase
             ])),
         ]);
 
-        $result = $client->authenticate('user-123');
+        $result = $client->authenticate('eyJhbGci.user.jwt');
 
         $this->assertInstanceOf(TokenResponse::class, $result);
         $this->assertSame('eyJhbGci.test.token', $result->accessToken);
@@ -54,7 +54,23 @@ class AuthClientTest extends TestCase
         $this->expectExceptionMessage('Invalid client credentials');
         $this->expectExceptionCode(401);
 
-        $client->authenticate('user-123');
+        $client->authenticate('eyJhbGci.user.jwt');
+    }
+
+    public function test_authenticate_throws_auth_exception_on_invalid_user_jwt(): void
+    {
+        $client = $this->makeClient([
+            new Response(401, [], json_encode([
+                'message' => 'Invalid token',
+                'payload' => null,
+            ])),
+        ]);
+
+        $this->expectException(AuthException::class);
+        $this->expectExceptionMessage('Invalid token');
+        $this->expectExceptionCode(401);
+
+        $client->authenticate('invalid.jwt.token');
     }
 
     public function test_authenticate_throws_auth_exception_on_inactive_client(): void
@@ -69,22 +85,7 @@ class AuthClientTest extends TestCase
         $this->expectException(AuthException::class);
         $this->expectExceptionCode(403);
 
-        $client->authenticate('user-123');
-    }
-
-    public function test_authenticate_throws_auth_exception_on_user_not_found(): void
-    {
-        $client = $this->makeClient([
-            new Response(404, [], json_encode([
-                'message' => 'User not found',
-                'payload' => null,
-            ])),
-        ]);
-
-        $this->expectException(AuthException::class);
-        $this->expectExceptionCode(404);
-
-        $client->authenticate('nonexistent-user');
+        $client->authenticate('eyJhbGci.user.jwt');
     }
 
     public function test_authenticate_exception_carries_response_context(): void
@@ -97,7 +98,7 @@ class AuthClientTest extends TestCase
         ]);
 
         try {
-            $client->authenticate('user-123');
+            $client->authenticate('eyJhbGci.user.jwt');
             $this->fail('Expected AuthException was not thrown');
         } catch (AuthException $e) {
             $this->assertNotNull($e->getContext());

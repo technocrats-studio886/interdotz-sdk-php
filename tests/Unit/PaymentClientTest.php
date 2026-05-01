@@ -117,11 +117,10 @@ class PaymentClientTest extends TestCase
 
         $result = $client->createChargeRequest(
             accessToken:   'token-abc',
-            userId:        'user-123',
             amount:        50,
             referenceType: 'SUBSCRIPTION',
             referenceId:   'sub-premium-april',
-            redirectUrl:   'https://myapp.com/payment/callback',
+            callbackUrl:   'https://myapp.com/payment/callback',
         );
 
         $this->assertInstanceOf(ChargeRequestResponse::class, $result);
@@ -141,7 +140,7 @@ class PaymentClientTest extends TestCase
 
         $this->expectException(InsufficientBalanceException::class);
 
-        $client->createChargeRequest('token-abc', 'user-123', 50, 'PURCHASE', 'order-001', 'https://myapp.com/callback');
+        $client->createChargeRequest('token-abc', 50, 'PURCHASE', 'order-001', 'https://myapp.com/callback');
     }
 
     // ── Balance ──────────────────────────────────────────────────────────────
