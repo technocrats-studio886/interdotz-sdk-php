@@ -48,7 +48,7 @@ class PaymentClient
         int $amount,
         string $referenceType,
         string $referenceId,
-        string $redirectUrl,
+        string $callbackUrl,
         ?string $description = null,
         ?string $productLogo = null,
     ): ChargeRequestResponse {
@@ -58,7 +58,7 @@ class PaymentClient
                 'amount'         => $amount,
                 'reference_type' => $referenceType,
                 'reference_id'   => $referenceId,
-                'redirect_url'   => $redirectUrl,
+                'callback_url'   => $callbackUrl,
             ];
 
             if ($description !== null) {
